@@ -170,13 +170,14 @@ function normalizeExternalSeries(item: any): Series {
     isTopRated: item?.isTopRated || false,
     isRecentlyAdded: item?.isRecentlyAdded || false,
     radarMetrics: item?.radarMetrics || {
-      storytelling: 0,
-      production: 0,
-      pacing: 0,
-      characterDepth: 0,
-      rewatchability: 0,
-      soundtrack: 0,
+      storytelling: 50,
+      production: 50,
+      pacing: 50,
+      characterDepth: 50,
+      rewatchability: 50,
+      soundtrack: 50,
     },
+    radarMetricEvidence: item?.radarMetricEvidence || {},
   };
 }
 

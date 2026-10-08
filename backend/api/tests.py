@@ -130,6 +130,37 @@ class CinePulseApiTests(APITestCase):
         self.assertEqual(analytics.data['sentimentDistribution']['positiveCount'], 1)
         self.assertEqual(analytics.data['ratingHistogram'][8]['count'], 1)
 
+    def test_radar_metrics_are_estimated_from_dimension_mentions_in_reviews(self):
+        user = User.objects.create_user(
+            username='radar-reviewer@example.com',
+            email='radar-reviewer@example.com',
+        )
+        Review.objects.create(
+            series=self.series,
+            author=user,
+            rating=8,
+            title='A strong story',
+            content=(
+                'The storytelling is brilliant. The cinematography looks stunning. '
+                'The pacing is painfully slow. The characters are compelling.'
+            ),
+            sentiment='positive',
+        )
+
+        response = self.client.get(f'/api/v1/series/{self.series.pk}/')
+
+        self.assertEqual(response.status_code, 200)
+        metrics = response.data['radarMetrics']
+        evidence = response.data['radarMetricEvidence']
+        self.assertGreater(metrics['storytelling'], 50)
+        self.assertGreater(metrics['production'], 50)
+        self.assertLess(metrics['pacing'], 50)
+        self.assertGreater(metrics['characterDepth'], 50)
+        self.assertEqual(metrics['soundtrack'], 50)
+        self.assertEqual(metrics['rewatchability'], 50)
+        self.assertEqual(evidence['storytelling'], 1)
+        self.assertEqual(evidence['soundtrack'], 0)
+
     def test_analytics_counts_all_reviews(self):
         test_user = User.objects.create_user(
             username='reviewer@example.com',

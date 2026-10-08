@@ -462,7 +462,9 @@ export const SeriesDetailPage: React.FC = () => {
               <Sparkles className="h-4 w-4 text-rose-500" />
               Quality Radar (0–100 Dimensions)
             </h3>
-            <span className="text-xs text-slate-400 font-mono">NLP & Critic Aggregates</span>
+            <span className="text-xs text-slate-400 font-mono">
+              Text estimates · unmentioned = 50
+            </span>
           </div>
 
           <div className="h-56 w-full">

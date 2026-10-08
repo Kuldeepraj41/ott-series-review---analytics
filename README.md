@@ -42,3 +42,5 @@ Production always uses the Django API and fails clearly if `VITE_API_URL` is mis
 Registration and administrator provisioning enforce Django's password validators. Users can change their own password from their profile after authenticating with their current password. Existing users retain their accounts and should change their passwords individually; do not reuse a shared password.
 
 The API provides JWT authentication, profiles, catalog and review operations, watchlists, ratings, admin endpoints, and database-backed analytics. Routes are rooted at `/api/v1/`; `/api/v1/health/` provides a health check.
+
+Radar dimensions are estimated from the sentiment of review sentences that mention each dimension. These are heuristic indicators, not critic scores; dimensions with no matching review text use a neutral default of 50. Explicit non-zero scores set by an administrator take precedence.

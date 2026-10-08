@@ -22,6 +22,8 @@ export interface RadarMetrics {
   soundtrack: number;   // 0-100
 }
 
+export type RadarMetricEvidence = Partial<Record<keyof RadarMetrics, number>>;
+
 export interface Series {
   id: string;
   title: string;
@@ -53,6 +55,7 @@ export interface Series {
   isTopRated?: boolean;
   isRecentlyAdded?: boolean;
   radarMetrics: RadarMetrics;
+  radarMetricEvidence?: RadarMetricEvidence;
 }
 
 export interface Review {

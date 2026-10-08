@@ -2,6 +2,7 @@ from django.db.models import Avg, Count, Q
 from rest_framework import serializers
 
 from .models import Genre, Platform, Review, Series, User, UserRating, WatchlistItem
+from .sentiment import estimate_radar_metrics
 
 
 class PlatformSerializer(serializers.ModelSerializer):
@@ -34,7 +35,8 @@ class SeriesSerializer(serializers.ModelSerializer):
     isTrending = serializers.BooleanField(source='is_trending', read_only=True)
     isTopRated = serializers.BooleanField(source='is_top_rated', read_only=True)
     isRecentlyAdded = serializers.BooleanField(source='is_recently_added', read_only=True)
-    radarMetrics = serializers.JSONField(source='radar_metrics', read_only=True)
+    radarMetrics = serializers.SerializerMethodField()
+    radarMetricEvidence = serializers.SerializerMethodField()
 
     class Meta:
         model = Series
@@ -44,7 +46,26 @@ class SeriesSerializer(serializers.ModelSerializer):
             'totalCriticReviews', 'totalAudienceReviews', 'sentimentBreakdown',
             'ratingDistribution', 'posterUrl', 'backdropUrl', 'ageRating', 'status',
             'creator', 'cast', 'isTrending', 'isTopRated', 'isRecentlyAdded', 'radarMetrics',
+            'radarMetricEvidence',
         ]
+
+    def _radar_data(self, obj):
+        cached = getattr(obj, '_serialized_radar_data', None)
+        if cached is None:
+            estimated, evidence = estimate_radar_metrics(obj.reviews.all())
+            metrics = dict(estimated)
+            for dimension, value in (obj.radar_metrics or {}).items():
+                if dimension in metrics and isinstance(value, (int, float)) and value > 0:
+                    metrics[dimension] = value
+            cached = (metrics, evidence)
+            obj._serialized_radar_data = cached
+        return cached
+
+    def get_radarMetrics(self, obj):
+        return self._radar_data(obj)[0]
+
+    def get_radarMetricEvidence(self, obj):
+        return self._radar_data(obj)[1]
 
     def _reviews(self, obj):
         return obj.reviews.all()

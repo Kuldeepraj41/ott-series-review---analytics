@@ -103,7 +103,7 @@ export const ComparePage: React.FC = () => {
   const radarComparativeData = dimensions.map((dim) => {
     const row: any = { subject: dim.label };
     selectedSeries.forEach((s) => {
-      row[s.title] = s.radarMetrics ? s.radarMetrics[dim.key as keyof typeof s.radarMetrics] : 85;
+      row[s.title] = s.radarMetrics ? s.radarMetrics[dim.key as keyof typeof s.radarMetrics] : 50;
     });
     return row;
   });
@@ -236,7 +236,7 @@ export const ComparePage: React.FC = () => {
                 Multi-Dimensional Dimension Radar
               </h3>
               <p className="text-xs text-slate-400">
-                Comparing Storytelling, Production, Pacing, and Character Depth
+                Approximate sentiment estimates from review text. Unmentioned dimensions default to neutral (50).
               </p>
             </div>
           </div>
@@ -246,7 +246,7 @@ export const ComparePage: React.FC = () => {
               <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarComparativeData}>
                 <PolarGrid stroke="#334155" />
                 <PolarAngleAxis dataKey="subject" stroke="#94a3b8" fontSize={11} />
-                <PolarRadiusAxis stroke="#475569" angle={30} domain={[60, 100]} tick={false} />
+                <PolarRadiusAxis stroke="#475569" angle={30} domain={[0, 100]} tick={false} />
                 {selectedSeries.map((s, idx) => (
                   <Radar
                     key={s.id}
