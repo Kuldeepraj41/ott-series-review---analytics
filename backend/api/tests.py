@@ -116,6 +116,7 @@ class CinePulseApiTests(APITestCase):
             'rating': 9,
             'title': 'Excellent',
             'content': 'A wonderful, brilliant, and thoroughly enjoyable story.',
+            'sentiment': 'negative',
             'containsSpoilers': False,
         }, format='json')
 

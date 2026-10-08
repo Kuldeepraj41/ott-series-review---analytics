@@ -20,7 +20,7 @@ import {
   Award,
   Users,
 } from 'lucide-react';
-import { Series, Review, SentimentType } from '../types';
+import { Series, Review } from '../types';
 import { seriesApi, reviewsApi } from '../services/api';
 import { PlatformBadge, SentimentBadge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -71,7 +71,6 @@ export const SeriesDetailPage: React.FC = () => {
   const [newRating, setNewRating] = useState<number>(8);
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
-  const [newSentiment, setNewSentiment] = useState<SentimentType>('positive');
   const [containsSpoilers, setContainsSpoilers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
@@ -129,7 +128,6 @@ export const SeriesDetailPage: React.FC = () => {
         rating: newRating,
         title: newTitle,
         content: newContent,
-        sentiment: newSentiment,
         containsSpoilers,
       });
 
@@ -820,29 +818,6 @@ export const SeriesDetailPage: React.FC = () => {
             />
           </div>
 
-          {/* Sentiment Selection */}
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1">
-              Sentiment Classification
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['positive', 'neutral', 'negative'] as SentimentType[]).map((sent) => (
-                <button
-                  type="button"
-                  key={sent}
-                  onClick={() => setNewSentiment(sent)}
-                  className={`py-1.5 px-3 rounded-lg border text-xs capitalize font-medium transition-colors ${
-                    newSentiment === sent
-                      ? 'bg-rose-600 text-white border-rose-500'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {sent === 'negative' ? 'Critical / Negative' : sent}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Review Content */}
           <div>
             <label className="text-xs font-semibold text-slate-300 block mb-1">
@@ -858,6 +833,9 @@ export const SeriesDetailPage: React.FC = () => {
               }}
               className="w-full rounded-lg bg-slate-950 border border-slate-700 p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-rose-500 resize-none"
             />
+            <p className="mt-1 text-[11px] text-slate-500">
+              Sentiment is automatically analyzed from your review text.
+            </p>
           </div>
 
           {/* Spoilers checkbox */}

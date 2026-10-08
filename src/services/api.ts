@@ -328,6 +328,16 @@ function applySeriesListParams(items: Series[], params?: SeriesListParams): Seri
   return result;
 }
 
+function classifyMockSentiment(text: string): SentimentType {
+  const positiveTerms = /\b(amazing|awesome|brilliant|compelling|enjoyable|excellent|fantastic|good|great|impressive|love|loved|masterful|wonderful)\b/gi;
+  const negativeTerms = /\b(awful|bad|boring|confusing|disappointing|dull|hate|hated|mediocre|poor|terrible|weak)\b/gi;
+  const positiveScore = text.match(positiveTerms)?.length || 0;
+  const negativeScore = text.match(negativeTerms)?.length || 0;
+  if (positiveScore > negativeScore) return 'positive';
+  if (negativeScore > positiveScore) return 'negative';
+  return 'neutral';
+}
+
 export const seriesApi = {
   async liveSearch(query: string): Promise<Series[]> {
     if (!query.trim()) return [];
@@ -477,7 +487,6 @@ export const reviewsApi = {
     rating: number;
     title: string;
     content: string;
-    sentiment?: SentimentType;
     containsSpoilers?: boolean;
   }): Promise<Review> {
     if (isDjangoMode()) {
@@ -493,13 +502,7 @@ export const reviewsApi = {
 
     const targetSeries = seriesStore.find((s) => s.id === data.seriesId);
 
-    // Auto classify sentiment based on rating if not provided
-    let calculatedSentiment: SentimentType = data.sentiment || 'positive';
-    if (!data.sentiment) {
-      if (data.rating >= 8) calculatedSentiment = 'positive';
-      else if (data.rating >= 6) calculatedSentiment = 'neutral';
-      else calculatedSentiment = 'negative';
-    }
+    const calculatedSentiment = classifyMockSentiment(`${data.title}. ${data.content}`);
 
     const isCritic =
       userStore.isCertifiedCritic ??
