@@ -106,6 +106,25 @@ export const SeriesDetailPage: React.FC = () => {
     }
   };
 
+  const generateReviewHeadline = () => {
+    const sentences = newContent
+      .trim()
+      .split(/(?<=[.!?])\s+|\n+/)
+      .map((sentence) => sentence.trim())
+      .filter(Boolean);
+    const source = sentences.sort((a, b) => b.length - a.length)[0];
+    if (!source) return;
+
+    const words = source.replace(/[.!?]+$/, '').split(/\s+/);
+    let headline = words.slice(0, 12).join(' ');
+    if (words.length > 12) headline += '…';
+    if (headline.length > 100) {
+      headline = `${headline.slice(0, 97).trimEnd()}…`;
+    }
+    setNewTitle(headline);
+    if (formError) setFormError('');
+  };
+
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
@@ -803,11 +822,25 @@ export const SeriesDetailPage: React.FC = () => {
 
           {/* Review Headline */}
           <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1">
-              Review Headline
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="review-headline" className="text-xs font-semibold text-slate-300">
+                Review Headline
+              </label>
+              <button
+                type="button"
+                onClick={generateReviewHeadline}
+                disabled={!newContent.trim() || isSubmitting}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-rose-300 hover:bg-rose-500/10 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-40"
+                title={newContent.trim() ? 'Generate a headline from your review text' : 'Write your review first'}
+              >
+                <Sparkles className="h-3 w-3" />
+                Generate
+              </button>
+            </div>
             <input
+              id="review-headline"
               type="text"
+              maxLength={200}
               placeholder="e.g. Masterclass in suspense and cinematography"
               value={newTitle}
               onChange={(e) => {
