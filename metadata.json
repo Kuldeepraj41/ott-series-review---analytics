@@ -1,0 +1,8 @@
+{
+  "name": "OTTIntel - OTT Series Review \u0026 Analytics",
+  "description": "Modern OTT series review, sentiment analytics, and comparative dashboard for streaming entertainment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
