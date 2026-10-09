@@ -82,14 +82,15 @@ export const SeriesDetailPage: React.FC = () => {
     if (!id) return;
     const loadData = async () => {
       setIsLoading(true);
-      const seriesData = await seriesApi.getById(id);
+      const [seriesData, reviewData] = await Promise.all([
+        seriesApi.getById(id),
+        reviewsApi.getBySeriesId(id, sentimentFilter, reviewSort),
+      ]);
       if (!seriesData) {
         navigate('/');
         return;
       }
       setSeries(seriesData);
-
-      const reviewData = await reviewsApi.getBySeriesId(id, sentimentFilter, reviewSort);
       setReviews(reviewData);
       setIsLoading(false);
     };

@@ -351,25 +351,22 @@ export const seriesApi = {
         return applySeriesListParams(await this.liveSearch(params.search), params);
       }
 
+      const catalog = await djangoRequest<Series[]>('/series/');
+      if (catalog.length > 0) return applySeriesListParams(catalog, params);
+
       const defaultQueries = ['Breaking Bad', 'The Office', 'Stranger Things', 'Severance'];
-      const [catalog, searchResults] = await Promise.all([
-        djangoRequest<Series[]>('/series/').catch((error: unknown) => {
-          console.warn('database series catalog request failed', error);
+      const searchResults = await Promise.all(defaultQueries.map(async (query) => {
+        try {
+          return await this.liveSearch(query);
+        } catch (error) {
+          console.warn('live search fallback failed for query', query, error);
           return [];
-        }),
-        Promise.all(defaultQueries.map(async (query) => {
-          try {
-            return await this.liveSearch(query);
-          } catch (error) {
-            console.warn('live search fallback failed for query', query, error);
-            return [];
-          }
-        })),
-      ]);
+        }
+      }));
       const combined = searchResults.flat();
 
-      const unique = [...catalog, ...combined].filter(
-        (item, idx, arr) => arr.findIndex((next) => next.id === item.id) === idx
+      const unique = combined.filter((item, idx, arr) =>
+        arr.findIndex((next) => next.id === item.id) === idx
       );
       return applySeriesListParams(unique, params);
     }
