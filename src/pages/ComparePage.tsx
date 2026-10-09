@@ -48,18 +48,26 @@ export const ComparePage: React.FC = () => {
   ];
 
   useEffect(() => {
+    let active = true;
     const load = async () => {
-      const all = await seriesApi.getAll();
+      const [all, requested] = await Promise.all([
+        seriesApi.getAll(),
+        seriesApi.compareSeries(paramIds),
+      ]);
+      if (!active) return;
       setAllSeries(all);
 
-      const requestedSeries = await seriesApi.compareSeries(paramIds);
+      const requestedSeries = [...requested];
       if (requestedSeries.length === 1) {
         const secondSeries = all.find((series) => series.id !== requestedSeries[0].id);
         if (secondSeries) requestedSeries.push(secondSeries);
       }
       setSelectedSeries(requestedSeries.length > 0 ? requestedSeries : all.slice(0, 2));
     };
-    load();
+    void load();
+    return () => {
+      active = false;
+    };
   }, [searchParams.get('ids')]);
 
   const updateIds = (next: Series[]) => {

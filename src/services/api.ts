@@ -352,26 +352,26 @@ export const seriesApi = {
       }
 
       const defaultQueries = ['Breaking Bad', 'The Office', 'Stranger Things', 'Severance'];
-      const combined = [] as Series[];
-      for (const query of defaultQueries) {
-        try {
-          const results = await this.liveSearch(query);
-          combined.push(...results);
-        } catch (error) {
-          console.warn('live search fallback failed for query', query, error);
-        }
-      }
+      const [catalog, searchResults] = await Promise.all([
+        djangoRequest<Series[]>('/series/').catch((error: unknown) => {
+          console.warn('database series catalog request failed', error);
+          return [];
+        }),
+        Promise.all(defaultQueries.map(async (query) => {
+          try {
+            return await this.liveSearch(query);
+          } catch (error) {
+            console.warn('live search fallback failed for query', query, error);
+            return [];
+          }
+        })),
+      ]);
+      const combined = searchResults.flat();
 
-      if (combined.length > 0) {
-        const unique = combined.filter((item, idx, arr) => arr.findIndex((next) => next.id === item.id) === idx);
-        return applySeriesListParams(unique, params);
-      }
-
-      const query = new URLSearchParams();
-      Object.entries(params || {}).forEach(([key, value]) => {
-        if (value) query.set(key, value);
-      });
-      return djangoRequest(`/series/${query.size ? `?${query}` : ''}`);
+      const unique = [...catalog, ...combined].filter(
+        (item, idx, arr) => arr.findIndex((next) => next.id === item.id) === idx
+      );
+      return applySeriesListParams(unique, params);
     }
     await delay();
     let result = [...seriesStore];

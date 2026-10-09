@@ -52,7 +52,7 @@ class SeriesSerializer(serializers.ModelSerializer):
     def _radar_data(self, obj):
         cached = getattr(obj, '_serialized_radar_data', None)
         if cached is None:
-            estimated, evidence = estimate_radar_metrics(obj.reviews.all())
+            estimated, evidence = estimate_radar_metrics(self._review_records(obj))
             metrics = dict(estimated)
             for dimension, value in (obj.radar_metrics or {}).items():
                 if dimension in metrics and isinstance(value, (int, float)) and value > 0:
@@ -67,43 +67,70 @@ class SeriesSerializer(serializers.ModelSerializer):
     def get_radarMetricEvidence(self, obj):
         return self._radar_data(obj)[1]
 
-    def _reviews(self, obj):
-        return obj.reviews.all()
+    def _review_records(self, obj):
+        cached = getattr(obj, '_serialized_review_records', None)
+        if cached is None:
+            if 'reviews' in getattr(obj, '_prefetched_objects_cache', {}):
+                cached = obj._prefetched_objects_cache['reviews']
+            else:
+                cached = list(obj.reviews.select_related('author').all())
+            obj._serialized_review_records = cached
+        return cached
+
+    def _review_summary(self, obj):
+        cached = getattr(obj, '_serialized_review_summary', None)
+        if cached is not None:
+            return cached
+
+        reviews = self._review_records(obj)
+        critics = [review.rating for review in reviews if review.author.is_certified_critic]
+        audience = [review.rating for review in reviews if not review.author.is_certified_critic]
+        all_ratings = [review.rating for review in reviews]
+        sentiment_counts = {'positive': 0, 'neutral': 0, 'negative': 0}
+        rating_distribution = {}
+        for review in reviews:
+            sentiment_counts[review.sentiment] += 1
+            rating_distribution[review.rating] = rating_distribution.get(review.rating, 0) + 1
+
+        total = len(reviews)
+        def average(values):
+            return round(sum(values) / len(values), 1) if values else 0
+
+        cached = {
+            'averageRating': average(critics or all_ratings),
+            'audienceRating': average(audience) if audience else average(critics or all_ratings),
+            'totalReviews': total,
+            'totalCriticReviews': len(critics),
+            'totalAudienceReviews': len(audience),
+            'sentimentBreakdown': {
+                key: round(count * 100 / total) if total else 0
+                for key, count in sentiment_counts.items()
+            },
+            'ratingDistribution': rating_distribution,
+        }
+        obj._serialized_review_summary = cached
+        return cached
 
     def get_averageRating(self, obj):
-        critics = self._reviews(obj).filter(author__is_certified_critic=True)
-        value = critics.aggregate(value=Avg('rating'))['value']
-        if value is None:
-            value = self._reviews(obj).aggregate(value=Avg('rating'))['value']
-        return round(value or 0, 1)
+        return self._review_summary(obj)['averageRating']
 
     def get_audienceRating(self, obj):
-        value = self._reviews(obj).filter(author__is_certified_critic=False).aggregate(value=Avg('rating'))['value']
-        return round(value, 1) if value is not None else self.get_averageRating(obj)
+        return self._review_summary(obj)['audienceRating']
 
     def get_totalReviews(self, obj):
-        return self._reviews(obj).count()
+        return self._review_summary(obj)['totalReviews']
 
     def get_totalCriticReviews(self, obj):
-        return self._reviews(obj).filter(author__is_certified_critic=True).count()
+        return self._review_summary(obj)['totalCriticReviews']
 
     def get_totalAudienceReviews(self, obj):
-        return self._reviews(obj).filter(author__is_certified_critic=False).count()
+        return self._review_summary(obj)['totalAudienceReviews']
 
     def get_sentimentBreakdown(self, obj):
-        total = self._reviews(obj).count()
-        counts = self._reviews(obj).values('sentiment').annotate(count=Count('id'))
-        result = {'positive': 0, 'neutral': 0, 'negative': 0}
-        if total:
-            for item in counts:
-                result[item['sentiment']] = round(item['count'] * 100 / total)
-        return result
+        return self._review_summary(obj)['sentimentBreakdown']
 
     def get_ratingDistribution(self, obj):
-        return {
-            item['rating']: item['count']
-            for item in self._reviews(obj).values('rating').annotate(count=Count('id'))
-        }
+        return self._review_summary(obj)['ratingDistribution']
 
 
 class ReviewSerializer(serializers.ModelSerializer):

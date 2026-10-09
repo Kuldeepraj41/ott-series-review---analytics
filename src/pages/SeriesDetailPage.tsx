@@ -834,9 +834,14 @@ export const SeriesDetailPage: React.FC = () => {
                 title={newContent.trim() ? 'Generate a headline from your review text' : 'Write your review first'}
               >
                 <Sparkles className="h-3 w-3" />
-                Generate
+                Generate from review
               </button>
             </div>
+            {!newContent.trim() ? (
+              <p className="mb-1 text-[11px] text-slate-500">
+                Write your review details first to generate a headline suggestion.
+              </p>
+            ) : null}
             <input
               id="review-headline"
               type="text"

@@ -192,6 +192,41 @@ class CinePulseApiTests(APITestCase):
         self.assertEqual(response.data[0]['platform'], 'Netflix')
         self.assertIn('sentimentBreakdown', response.data[0])
 
+    def test_series_list_serializes_review_metrics_without_per_series_queries(self):
+        second_series = Series.objects.create(
+            id='second-test-series', title='Second Test Series', platform=self.platform,
+            release_year=2024, seasons=1, episodes=6,
+        )
+        reviewer = User.objects.create_user(
+            username='query-reviewer@example.com',
+            email='query-reviewer@example.com',
+        )
+        Review.objects.create(
+            series=self.series,
+            author=reviewer,
+            rating=8,
+            title='A brilliant story',
+            content='The storytelling is excellent.',
+            sentiment='positive',
+        )
+        Review.objects.create(
+            series=second_series,
+            author=reviewer,
+            rating=6,
+            title='A mixed story',
+            content='The story is good, but the pacing is slow.',
+            sentiment='neutral',
+        )
+
+        with self.assertNumQueries(4):
+            response = self.client.get('/api/v1/series/')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        first = next(item for item in response.data if item['id'] == self.series.pk)
+        self.assertEqual(first['averageRating'], 8)
+        self.assertEqual(first['totalReviews'], 1)
+
     def test_platform_and_genre_catalogs_and_admin_series_creation(self):
         self.assertEqual(self.client.get('/api/v1/platforms/').data[0]['name'], 'Netflix')
         self.assertEqual(self.client.get('/api/v1/genres/').data[0]['name'], 'Drama')

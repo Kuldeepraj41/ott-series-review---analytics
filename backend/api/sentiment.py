@@ -49,14 +49,23 @@ def estimate_radar_metrics(reviews):
     for review in reviews:
         text = f'{review.title}. {review.content}'.strip()
         sentences = _SENTENCE_BOUNDARY.split(text)
-        for dimension, pattern in _RADAR_DIMENSIONS.items():
-            matched_scores = [
-                _analyzer.polarity_scores(sentence)['compound']
-                for sentence in sentences
+        matched_scores = {dimension: [] for dimension in _RADAR_DIMENSIONS}
+        for sentence in sentences:
+            matched_dimensions = [
+                dimension
+                for dimension, pattern in _RADAR_DIMENSIONS.items()
                 if pattern.search(sentence)
             ]
-            if matched_scores:
-                review_scores[dimension].append(sum(matched_scores) / len(matched_scores))
+            if not matched_dimensions:
+                continue
+            score = _analyzer.polarity_scores(sentence)['compound']
+            for dimension in matched_dimensions:
+                matched_scores[dimension].append(score)
+
+        for dimension in _RADAR_DIMENSIONS:
+            scores = matched_scores[dimension]
+            if scores:
+                review_scores[dimension].append(sum(scores) / len(scores))
 
     scores = {}
     evidence = {}

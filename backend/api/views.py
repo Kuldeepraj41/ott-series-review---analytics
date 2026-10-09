@@ -342,7 +342,7 @@ class SeriesDetailView(APIView):
 
     def get(self, request, pk):
         series = get_object_or_404(
-            Series.objects.select_related('platform').prefetch_related('genres', 'reviews'),
+            Series.objects.select_related('platform').prefetch_related('genres', 'reviews__author'),
             pk=pk,
         )
         return Response(SeriesSerializer(series, context={'request': request}).data)
@@ -369,7 +369,7 @@ class TrendingSeriesView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        series = Series.objects.filter(is_trending=True).select_related('platform').prefetch_related('genres', 'reviews')
+        series = Series.objects.filter(is_trending=True).select_related('platform').prefetch_related('genres', 'reviews__author')
         return Response(SeriesSerializer(series, many=True, context={'request': request}).data)
 
 
@@ -392,7 +392,7 @@ class TopRatedSeriesView(APIView):
 
     def get(self, request):
         limit = min(max(int(request.query_params.get('limit', 6)), 1), 100)
-        series = Series.objects.select_related('platform').prefetch_related('genres', 'reviews').annotate(
+        series = Series.objects.select_related('platform').prefetch_related('genres', 'reviews__author').annotate(
             rating=Avg('reviews__rating'),
         ).order_by('-rating')[:limit]
         return Response(SeriesSerializer(series, many=True, context={'request': request}).data)
@@ -403,7 +403,7 @@ class RecentlyAddedSeriesView(APIView):
 
     def get(self, request):
         limit = min(max(int(request.query_params.get('limit', 4)), 1), 100)
-        series = Series.objects.filter(is_recently_added=True).select_related('platform').prefetch_related('genres', 'reviews').order_by('-created_at')[:limit]
+        series = Series.objects.filter(is_recently_added=True).select_related('platform').prefetch_related('genres', 'reviews__author').order_by('-created_at')[:limit]
         return Response(SeriesSerializer(series, many=True, context={'request': request}).data)
 
 
@@ -412,7 +412,7 @@ class CompareSeriesView(APIView):
 
     def get(self, request):
         ids = request.query_params.getlist('ids')
-        series = Series.objects.filter(pk__in=ids).select_related('platform').prefetch_related('genres', 'reviews')
+        series = Series.objects.filter(pk__in=ids).select_related('platform').prefetch_related('genres', 'reviews__author')
         return Response(SeriesSerializer(series, many=True, context={'request': request}).data)
 
 
@@ -618,7 +618,7 @@ class AdminSeriesView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
-        items = Series.objects.select_related('platform').prefetch_related('genres', 'reviews')
+        items = Series.objects.select_related('platform').prefetch_related('genres', 'reviews__author')
         return Response(SeriesSerializer(items, many=True, context={'request': request}).data)
 
     def post(self, request):
